@@ -13,6 +13,8 @@
 			exit(EXIT_FAILURE);					\
 		}										\
 	} while(0)
+	
+#define RUNT_TEST 1
 
 
 typedef struct node {
@@ -59,7 +61,9 @@ node* find(char *search_term, node* hash_table[], int hash_length)
 int add(char* key_to_add, node* hash_table[], int hash_length)
 {
 	int index;
-	printf("++ADDING [%s]:\n", key_to_add);
+	if (RUNT_TEST)
+		printf("ADD [%s]:\n", key_to_add);
+		
 	node* new_node;
 	if((new_node = find(key_to_add, hash_table, hash_length)) == NULL){
 		index = hash(key_to_add, hash_length);
@@ -69,6 +73,7 @@ int add(char* key_to_add, node* hash_table[], int hash_length)
 		new_node->key = strdup(key_to_add);
 		if(new_node->key == NULL)
 			return 0;
+		new_node->value = index;
 		new_node->next = hash_table[index];
 		hash_table[index] = new_node;
 	}
@@ -77,20 +82,56 @@ int add(char* key_to_add, node* hash_table[], int hash_length)
 	return 1;
 }
 
+void rem(char* key, node* hash_table[], int hash_length)
+{
+	if (RUNT_TEST)
+		printf("REM [%s]:\n", key);
+		
+	int index = hash(key, hash_length);
+	node* np = find(key, hash_table, hash_length);
+	if (NULL == np)
+		return;
+
+	np = hash_table[index];
+	if (strcmp(np->key, key) == 0) {
+		node* aux = np;
+		if (np->next == NULL) {
+			hash_table[index] = NULL;
+			free(aux);
+			return;
+		}
+		np = np->next;
+		free(aux);
+		return;
+	}
+	for(; np != NULL; np = np->next)
+
+		if (strcmp(np->next->key, key) == 0) {
+			node* aux = np->next;
+			np->next = np->next->next;
+			free(aux);
+			return;
+		}
+}
+
 void print_bucket(int index, node* hash_table[])
 {
 	node* np = hash_table[index];
+	printf("\t[%d] - ", index);
 	for(; np != NULL; np = np->next)
-		printf("\t[%d] - [%s]\n", np->value, np->key);
+		if (np != NULL)
+			printf("[%s] ", np->key);
+	printf("\n");
 }
 
 void print_hash(node* hash_table[], int hash_length)
 {
 	int i;
-	printf("++PRINT:\n");
+	printf("PRINT:\n");
 	for (i = 0; i < hash_length; i++)
 		if (hash_table[i] != NULL)
 			print_bucket(i, hash_table);
+	printf("---------------------\n");
 }
 
 void test(node* hash_table[], int hash_length)
@@ -101,8 +142,21 @@ void test(node* hash_table[], int hash_length)
 	add("mama", hash_table, hash_length);
 	print_hash(hash_table, hash_length);
 	
+	add("riri", hash_table, hash_length);
+	print_hash(hash_table, hash_length);
+	
+	add("fofo", hash_table, hash_length);
+	print_hash(hash_table, hash_length);
+	
+	rem("JSKADKSDNAK", hash_table, hash_length);
+	print_hash(hash_table, hash_length);
+	
+	rem("riri", hash_table, hash_length);
+	print_hash(hash_table, hash_length);
+	
 	DIE(!find("mimi", hash_table, hash_length), "NOT FOUND");
 	DIE(!find("mama", hash_table, hash_length), "NOT FOUND");
+	DIE(find("lala", hash_table, hash_length), "FOUND INEXISTING");
 }
 
 int main(int argc, char** argv)
@@ -117,10 +171,10 @@ int main(int argc, char** argv)
 	node* hash_table[hash_length];
 	init_hash(hash_table, hash_length);
 	
-	printf("hash_length=[%d]\n", hash_length);
-	read_input(argc, argv);
+	//read_input(argc, argv);
 	
-	test(hash_table, hash_length);
+	if(RUNT_TEST)
+		test(hash_table, hash_length);
 	
 	return 0;
 }
