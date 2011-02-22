@@ -166,22 +166,30 @@ node** new_hash(int hash_length)
 	return ret;
 }
 
-node** resize_double(node** hash_table, int* phash_length)
+node** resize(node** hash_table, int hash_length, int new_length)
 {
 	int i;
-	int hash_length = *phash_length;
-	node** tmp_hash = new_hash(2 * (*phash_length));
+	node** tmp_hash = new_hash(new_length);
 	
 	for (i = 0; i < hash_length; i++) {
 		node* np = hash_table[i];
  		for (; np != NULL; np = np->next)
- 			add(np->value, tmp_hash, 2 * hash_length);
+ 			add(np->value, tmp_hash, new_length);
  	}
 	clear(hash_table, hash_length);
 	free(hash_table);
-	*phash_length = 2 * hash_length;
 	
 	return tmp_hash;
+}
+
+node** resize_double(node** hash_table, int* phash_length)
+{
+	return resize(hash_table, *phash_length, 2 * (*phash_length));
+}
+
+node** resize_halve(node** hash_table, int* phash_length)
+{
+	return resize(hash_table, *phash_length, (*phash_length)/2);
 }
 
 node** test(node** hash_table, int *hash_length)
@@ -235,6 +243,7 @@ node** test(node** hash_table, int *hash_length)
 	*/
 	
 	hash_table = resize_double(hash_table, hash_length);
+	*hash_length = 2 * (*hash_length);
 	print_hash(hash_table, *hash_length);
 	return hash_table;
 }
