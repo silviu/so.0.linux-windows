@@ -53,6 +53,7 @@ node* find(char *search_term, node* hash_table[], int hash_length)
 	int index = hash(search_term, hash_length);
 	node* np = hash_table[index];
 	for(; np != NULL; np = np->next)
+		if (np->key != NULL)
 			if (strcmp(np->key, search_term) == 0)
 				return np;
 	return NULL;
@@ -70,7 +71,8 @@ int add(char* key_to_add, node* hash_table[], int hash_length)
 		new_node = (node*) malloc(sizeof(node));
 		if(new_node == NULL)
 			return 0;
-		new_node->key = strdup(key_to_add);
+		new_node->key = malloc(strlen(key_to_add) + 1);
+		strncpy(new_node->key, key_to_add, strlen(key_to_add) + 1);
 		if(new_node->key == NULL)
 			return 0;
 		new_node->value = index;
@@ -93,25 +95,31 @@ void rem(char* key, node* hash_table[], int hash_length)
 		return;
 
 	np = hash_table[index];
-	if (strcmp(np->key, key) == 0) {
-		node* aux = np;
-		if (np->next == NULL) {
-			hash_table[index] = NULL;
+	if (np->key != NULL)
+		if (strcmp(np->key, key) == 0) {
+			node* aux = np;
+			if (np->next == NULL) {
+				hash_table[index] = NULL;
+				free(aux->key);
+				free(aux);
+				return;
+			}
+			np = np->next;
+			hash_table[index] = np;
+			free(aux->key);
 			free(aux);
 			return;
 		}
-		np = np->next;
-		free(aux);
-		return;
-	}
-	for(; np != NULL; np = np->next)
-
+	
+	for(; np->next != NULL; np = np->next) {
 		if (strcmp(np->next->key, key) == 0) {
 			node* aux = np->next;
 			np->next = np->next->next;
+			free(aux->key);
 			free(aux);
 			return;
 		}
+	}
 }
 
 void print_bucket(int index, node* hash_table[])
@@ -131,32 +139,52 @@ void print_hash(node* hash_table[], int hash_length)
 	for (i = 0; i < hash_length; i++)
 		if (hash_table[i] != NULL)
 			print_bucket(i, hash_table);
-	printf("---------------------\n");
+	printf("----------------------------------\n");
 }
 
 void test(node* hash_table[], int hash_length)
 {
 	add("mimi", hash_table, hash_length);
 	print_hash(hash_table, hash_length);
+	DIE(!find("mimi", hash_table, hash_length), "NOT FOUND");
 	
 	add("mama", hash_table, hash_length);
 	print_hash(hash_table, hash_length);
+	DIE(!find("mama", hash_table, hash_length), "NOT FOUND");
 	
 	add("riri", hash_table, hash_length);
 	print_hash(hash_table, hash_length);
+	DIE(!find("riri", hash_table, hash_length), "NOT FOUND");
 	
 	add("fofo", hash_table, hash_length);
 	print_hash(hash_table, hash_length);
+	DIE(!find("fofo", hash_table, hash_length), "NOT FOUND");
 	
-	rem("JSKADKSDNAK", hash_table, hash_length);
+	add("sasa", hash_table, hash_length);
 	print_hash(hash_table, hash_length);
+	DIE(!find("sasa", hash_table, hash_length), "NOT FOUND");
+	
+	add("ywue", hash_table, hash_length);
+	print_hash(hash_table, hash_length);
+	DIE(!find("ywue", hash_table, hash_length), "NOT FOUND");
+	
+	
+	rem("fofo", hash_table, hash_length);
+	print_hash(hash_table, hash_length);
+	DIE(find("fofo", hash_table, hash_length), "FOUND INEXISTING");
 	
 	rem("riri", hash_table, hash_length);
 	print_hash(hash_table, hash_length);
+	DIE(find("riri", hash_table, hash_length), "FOUND INEXISTING");
 	
-	DIE(!find("mimi", hash_table, hash_length), "NOT FOUND");
-	DIE(!find("mama", hash_table, hash_length), "NOT FOUND");
-	DIE(find("lala", hash_table, hash_length), "FOUND INEXISTING");
+	rem("ywue", hash_table, hash_length);
+	print_hash(hash_table, hash_length);
+	DIE(find("ywue", hash_table, hash_length), "FOUND INEXISTING");
+	
+	
+	rem("mimi", hash_table, hash_length);
+	print_hash(hash_table, hash_length);
+	DIE(find("mimi", hash_table, hash_length), "NOT FOUND");
 }
 
 int main(int argc, char** argv)
@@ -171,7 +199,7 @@ int main(int argc, char** argv)
 	node* hash_table[hash_length];
 	init_hash(hash_table, hash_length);
 	
-	//read_input(argc, argv);
+	/*read_input(argc, argv);*/
 	
 	if(RUNT_TEST)
 		test(hash_table, hash_length);
