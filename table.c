@@ -19,7 +19,6 @@
 
 typedef struct node {
 	char* key;
-	int value;
 	struct node* next;
 } node;
 
@@ -79,7 +78,6 @@ int add(char* key_to_add, node** hash_table, int hash_length)
 		if(new_node->key == NULL)
 			return 0;
 			
-		new_node->value = index;
 		new_node->next = hash_table[index];
 		hash_table[index] = new_node;
 		
