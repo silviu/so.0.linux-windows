@@ -18,7 +18,7 @@
 
 
 typedef struct node {
-	char* key;
+	char* value;
 	struct node* next;
 } node;
 
@@ -52,30 +52,30 @@ node* find(char *search_term, node** hash_table, int hash_length)
 	int index = hash(search_term, hash_length);
 	node* np = hash_table[index];
 	for(; np != NULL; np = np->next)
-		if (np->key != NULL)
-			if (strcmp(np->key, search_term) == 0)
+		if (np->value != NULL)
+			if (strcmp(np->value, search_term) == 0)
 				return np;
 	return NULL;
 }
 
-int add(char* key_to_add, node** hash_table, int hash_length)
+int add(char* value_to_add, node** hash_table, int hash_length)
 {
 	int index;
 	if (RUNT_TEST)
-		printf("ADD [%s]:\n", key_to_add);
+		printf("ADD [%s]:\n", value_to_add);
 		
-	node* new_node = find(key_to_add, hash_table, hash_length);
+	node* new_node = find(value_to_add, hash_table, hash_length);
 	if (new_node != NULL)
 		return -1;
 	
-		index = hash(key_to_add, hash_length);
+		index = hash(value_to_add, hash_length);
 		new_node = (node*) malloc(sizeof(node));
 		if(new_node == NULL)
 			return 0;
 			
-		new_node->key = malloc(strlen(key_to_add) + 1);
-		memcpy(new_node->key, key_to_add, strlen(key_to_add) + 1);
-		if(new_node->key == NULL)
+		new_node->value = malloc(strlen(value_to_add) + 1);
+		memcpy(new_node->value, value_to_add, strlen(value_to_add) + 1);
+		if(new_node->value == NULL)
 			return 0;
 			
 		new_node->next = hash_table[index];
@@ -84,38 +84,38 @@ int add(char* key_to_add, node** hash_table, int hash_length)
 	return 1;
 }
 
-void rem(char* key, node** hash_table, int hash_length)
+void rem(char* value, node** hash_table, int hash_length)
 {
 	if (RUNT_TEST)
-		printf("REM [%s]:\n", key);
+		printf("REM [%s]:\n", value);
 		
-	int index = hash(key, hash_length);
-	node* np = find(key, hash_table, hash_length);
+	int index = hash(value, hash_length);
+	node* np = find(value, hash_table, hash_length);
 	if (NULL == np)
 		return;
 
 	np = hash_table[index];
-	if (np->key != NULL)
-		if (strcmp(np->key, key) == 0) {
+	if (np->value != NULL)
+		if (strcmp(np->value, value) == 0) {
 			node* aux = np;
 			if (np->next == NULL) {
 				hash_table[index] = NULL;
-				free(aux->key);
+				free(aux->value);
 				free(aux);
 				return;
 			}
 			np = np->next;
 			hash_table[index] = np;
-			free(aux->key);
+			free(aux->value);
 			free(aux);
 			return;
 		}
 	
 	for(; np->next != NULL; np = np->next) {
-		if (strcmp(np->next->key, key) == 0) {
+		if (strcmp(np->next->value, value) == 0) {
 			node* aux = np->next;
 			np->next = np->next->next;
-			free(aux->key);
+			free(aux->value);
 			free(aux);
 			return;
 		}
@@ -132,7 +132,7 @@ void clear(node** hash_table, int hash_length)
 			node* np = hash_table[i];
 			for (; np != NULL; np= np->next) {
 				node* aux = np;
-				free(aux->key);
+				free(aux->value);
 				free(aux);
 			}
 			hash_table[i] = NULL;
@@ -145,7 +145,7 @@ void print_bucket(int index, node** hash_table)
 	printf("\t[%d] - ", index);
 	for(; np != NULL; np = np->next)
 		if (np != NULL)
-			printf("[%s] ", np->key);
+			printf("[%s] ", np->value);
 	printf("\n");
 }
 
@@ -175,7 +175,7 @@ node** resize_double(node** hash_table, int* phash_length)
 	for (i = 0; i < hash_length; i++) {
 		node* np = hash_table[i];
  		for (; np != NULL; np = np->next)
- 			add(np->key, tmp_hash, 2 * hash_length);
+ 			add(np->value, tmp_hash, 2 * hash_length);
  	}
 	clear(hash_table, hash_length);
 	free(hash_table);
