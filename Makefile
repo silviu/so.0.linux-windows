@@ -1,7 +1,7 @@
 COMPLILER_LINUX = gcc
 COMPILER_WINDOWS = cl
 
-CFLAGS_LINUX = -Wall -g -ansi
+CFLAGS_LINUX = -Wall -g
 CFLAGS_WINDOWS = 
 
 PGR = table

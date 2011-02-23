@@ -15,7 +15,7 @@
 	} while(0)
 	
 #define RUNT_TEST 0
-#define CHUNK_SIZE 255
+#define CHUNK_SIZE 2
 #define NR_TOKENS 10
 
 
@@ -131,12 +131,12 @@ void rem(char* value, hash_t* hash_table)
 void clear(hash_t* hash_table)
 {
 	int i;
-		
 	for (i = 0; i < hash_table->length; i++)
 		if (hash_table->head[i] != NULL) {
 			node* np = hash_table->head[i];
-			for (; np != NULL; np = np->next) {
+			for (; np != NULL;) {
 				node* aux = np;
+				np = np->next;
 				free(aux->value);
 				free(aux);
 			}
@@ -202,15 +202,23 @@ void resize_halve(hash_t* hash_table)
 }
 
 
-void run_commands(char* command, char** args, hash_t* hash_table)
+void run_commands(char* command, char** args, int nr_args, hash_t* hash_table)
 {
 	
 	if (!strcmp(command, "add")) {
+		if (nr_args == 0) {
+			fprintf(stderr, "Parameter missing for \"add\" command.\n");
+			return;
+		}
 		add(args[0], hash_table);
 		return;
 	}
 	
 	if (!strcmp(command, "remove")) {
+		if (nr_args == 0) {
+			fprintf(stderr, "Parameter missing for \"remove\" command.\n");	
+			return;
+		}
 		rem(args[0], hash_table);
 		return;
 	}
@@ -221,10 +229,17 @@ void run_commands(char* command, char** args, hash_t* hash_table)
 	}
 	
 	if (!strcmp(command, "find")) {
-		FILE* f = fopen(args[1], "a");
-		if (f == NULL)
-			f = stdout;
+		FILE* f;
+		if (nr_args == 0) {
+			fprintf(stderr, "Parameter missing for \"find\" command.\n");
+			return;
+		}
 		
+		if (nr_args > 1)
+			f = fopen(args[1], "a");
+		else
+			f = stdout;
+			
 		node* np = find(args[0], hash_table);
 		if (np)
 			fprintf(f, "True\n");
@@ -236,64 +251,61 @@ void run_commands(char* command, char** args, hash_t* hash_table)
 	}
 	
 	if (!strcmp(command, "print_bucket")) {
-		FILE* f = fopen(args[1], "a");
-		if (f == NULL) {
-			f = stdout;
+		FILE* f;
+		if (nr_args == 0) {
+			fprintf(stderr, "Parameter missing for \"print_bucket\" command.\n");
+			return;
 		}
+		
+		if (nr_args > 1)
+			f = fopen(args[1], "a");
+		else
+			f = stdout;
+		
 		print_bucket(atoi(args[0]), f, hash_table);
+		
 		if (f != stdout)
 			fclose(f);
 		return;
 	}
 	
 	if (!strcmp(command, "print")) {
-		FILE* f = fopen(args[0], "a");
-		if (f == NULL) {
+		FILE* f;
+		if (nr_args == 0)
 			f = stdout;
-		}
+		else
+			f = fopen(args[0], "a");
+			
 		print_hash(f, hash_table);
 		if (f != stdout)
 			fclose(f);
 	}
 	
-	if (!strcmp(command, "resize double")) {
-		resize_double(hash_table);
-		return;
-	}
-	
-	
-	if (!strcmp(command, "resize halve")) {
-		resize_halve(hash_table);
-		return;
+	if (!strcmp(command, "resize")) {
+		if (nr_args == 0) {
+			fprintf(stderr, "Parameter missing for \"resize\" command.\n");
+			return;
+		}
+		if (!strcmp(args[0], "double"))
+			resize_double(hash_table);
+		else if	(!strcmp(args[0], "halve"))
+			resize_halve(hash_table);
+		else {
+			fprintf(stderr, "Invalid argument[%s] for Resize.\n", args[0]);
+		}
 	}
 }
 
 
+
 void parse_line(char* line, hash_t* hash_table)
 {
-	char* word = malloc(CHUNK_SIZE);
-	word = strtok(line, " ");
+	char* word = strtok(line, " ");
 	if (word == NULL) {
-		printf("EMPTY LINE.\n");
+		printf("EMPTY LINE=[%s].\n", line);
 		return;
 	}
-	char* command = malloc(strlen(word));
-	memcpy(command, word, strlen(word));
-	
-	
-	if (!strcmp(command, "resize")) {
-		word = strtok(NULL, " ");
-		char* first_part = malloc(strlen(command));
-		memcpy(first_part, command, strlen(command));
-		
-		command = realloc(command, strlen(command) + strlen(word) + 1);
-		memcpy(command, first_part, strlen(first_part));
-		memcpy(command + strlen(first_part), " ", 1);
-		strncat(command, word, strlen(word));
-		run_commands(command, NULL, hash_table);
-		
-		return;
-	}
+	char* command = word;
 	
 	int nr_args = 0;
 	char** args = malloc(nr_args * sizeof(char*));
@@ -302,42 +314,62 @@ void parse_line(char* line, hash_t* hash_table)
 		if (word) {
 			nr_args++;
 			args = realloc(args, nr_args * sizeof(char*));
-			args[nr_args - 1] = malloc(strlen(word));
-			memcpy(args[nr_args - 1], word, strlen(word));
+			args[nr_args - 1] = word;
 		}
 	}
-	run_commands(command, args, hash_table);
-	
+	run_commands(command, args, nr_args, hash_table);
+	free(args);
 }
 
+
+void read_read(FILE* f, hash_t* hash_table)
+{
+	size_t buff_size = CHUNK_SIZE;
+	char* command = malloc(buff_size + 1);
+	
+	while (!feof(f)) {
+		command[0] = '\0';
+		for(;;) {
+			size_t offset = strlen(command);
+			char* ret = fgets(command + offset, buff_size - offset, f);
+			if (ret == NULL && feof(f))
+				break;
+			DIE(!ret, "ERROR reading from file in read_files()");
+			if (strchr(command + offset, '\n'))
+				break;
+			buff_size *= 2;
+			command = realloc(command, buff_size + 1);
+		}
+		if (strlen(command) > 0)
+		if (command[strlen(command)-1] == '\n' || 
+			command[strlen(command)-1] == '\r')
+			command[strlen(command)-1] = '\0';
+		parse_line(command, hash_table);
+	}
+	free(command);
+}
 
 void read_files(int argc, char** argv, hash_t* hash_table)
 {
 	int i;
 	int nr_files = argc - 2;
-	char* command = malloc(CHUNK_SIZE + 1);
+	
 	for (i = 0; i < nr_files; i++) {
 		FILE* f = fopen(argv[i + 2], "r");
-		while (!feof(f)) {
-			fgets(command, CHUNK_SIZE, f);
-			if (command[strlen(command)-1] == '\n' || command[strlen(command)-1] == '\r')
-				command[strlen(command)-1] = '\0';
-			/*if (strchr(command, '\n'))*/
-				parse_line(command, hash_table);
-		}
+		read_read(f, hash_table);
 		fclose(f);
 	}
 }
 
-void read_stdin()
+void read_stdin(hash_t* hash_table)
 {
-	printf("READ STDIN\n");
+	read_read(stdin, hash_table);
 }
 
 void read_input(int argc, char** argv, hash_t* hash_table)
 {
 	if (argc == 2)
-		read_stdin();
+		read_stdin(hash_table);
 	else
 		read_files(argc, argv, hash_table);
 }
@@ -349,71 +381,13 @@ int main(int argc, char** argv)
 		fprintf(stderr, "Too few arguments.\n");
 		exit(EXIT_FAILURE);
 	}
-		
+	
 	hash_length = atoi(argv[1]);
 	hash_t* hash_table = new_hash(hash_length);
 	
 	read_input(argc, argv, hash_table);
-	free(hash_table);
+	free_hash(hash_table);
 	
 	return 0;
 }
-
-
-
-/*void test(hash_t* hash_table)
-{
-	add("mimi", hash_table);
-	print_hash(NULL, hash_table);
-	DIE(!find("mimi", hash_table), "NOT FOUND");
-	
-	add("mama", hash_table);
-	print_hash(NULL, hash_table);
-	DIE(!find("mama", hash_table), "NOT FOUND");
-	
-	add("riri", hash_table);
-	print_hash(NULL, hash_table);
-	DIE(!find("riri", hash_table), "NOT FOUND");
-	
-	add("fofo", hash_table);
-	print_hash(NULL, hash_table);
-	DIE(!find("fofo", hash_table), "NOT FOUND");
-	
-	add("sasa", hash_table);
-	print_hash(NULL, hash_table);
-	DIE(!find("sasa", hash_table), "NOT FOUND");
-	
-	
-	add("jhadsfladskf", hash_table);
-	print_hash(NULL, hash_table);
-	DIE(!find("sasa", hash_table), "NOT FOUND");
-	
-	add("ywue", hash_table);
-	print_hash(NULL, hash_table);
-	DIE(!find("ywue", hash_table), "NOT FOUND");
-	
-	
-	rem("ywue", hash_table);
-	print_hash(NULL, hash_table);
-	DIE(find("ywue", hash_table), "FOUND INEXISTING");
-	
-	rem("fofo", hash_table);
-	print_hash(NULL, hash_table);
-	DIE(find("fofo", hash_table), "FOUND INEXISTING");
-	
-	rem("riri", hash_table);
-	print_hash(NULL, hash_table);
-	DIE(find("riri", hash_table), "FOUND INEXISTING");
-	
-	
-	rem("mimi", hash_table);
-	print_hash(NULL, hash_table);
-	DIE(find("mimi", hash_table), "FOUND INEXISTING");
-	
-	printf("DOUBLE:\n");
-	resize_double(hash_table);
-	print_hash(NULL, hash_table);
-}
-*/
-
 
