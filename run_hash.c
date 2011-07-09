@@ -86,7 +86,9 @@ int add(char* value_to_add, hash_t* hash_table)
 	}
 	
 	for (; it->next; it = it->next);
+	new_node->next = NULL;
 	it->next = new_node;
+	
 	
 	return 1;
 }
@@ -143,6 +145,7 @@ void free_hash(hash_t* hash_table)
 void print_bucket(int key, FILE* f, hash_t* hash_table)
 {
 	node* np = hash_table->head[key];
+	/*printf("[%d] - ", key);*/
 	for(; np != NULL; np = np->next)
 			fprintf(f, "%s ", np->value);
 	fprintf(f, "\n");

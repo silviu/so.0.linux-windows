@@ -5,7 +5,7 @@ PGR = tema0
 build: $(PGR)
 
 $(PGR): hash.c run_hash.c
-	$(CC) $(CFLAGS) $^ -o $@
+	$(CC) $(CFLAGS) $^ -o $(PGR)
 
 zip: clean
 	zip Tema0.zip *

@@ -1,0 +1,75 @@
+Tema 0 HashTable
+
+Scopul temei
+Recapitularea lucrului cu funcţiile ANSI C:
+lucrul cu fişiere
+alocare dinamică de memorie
+Folosirea pointerilor
+
+Enunţ
+Să se implementeze în C o tabelă de dispersie (hashtable) ce va conţine cuvinte.
+Operaţiile ce trebuie suportate de această tabelă sunt următoarele:
+add adauga cuvântul la hashtable (nu se permit dubluri)
+remove şterge cuvântul din hashtable (nu e obligatoriu să existe cuvântul)
+clear goleşte tabela
+find [] caută cuvântul în hashtable scrie True sau False pe o linie nouă în fişierul specificat sau la consolă dacă acest
+parametru lipseşte
+print_bucket [] scrie cuvintele din bucketul respectiv, pe o singură linie şi separate de spaţiu în fişierul specificat sau la
+consolă dacă acest parametru lipseşte, index_bucket este valid
+print [] printeaza toate bucket-urile pe linii diferite, începând cu bucketul 0, în fişierul specificat sau la consolă dacă acest
+parametru lipseşte
+resize double dublează dimensiunea hash-ului (bucket-urile vor fi parcuse în ordine şi cuvintele sunt redistribuite)
+resize halve înjumătăţeşte dimensiunea hash-ului (bucket-urile vor fi parcuse în ordine şi cuvintele sunt redistribuite,
+memoria în surplus va fi dealocată )
+
+Aceste comenzi se vor regăsi una per linie.
+Programul va primi o serie de parametri:
+Primul parametru este lungimea iniţiala a hashului
+Următorii parametri pot lipsi şi reprezintă o listă de fişiere din care se face citirea. Dacă aceştia lipsesc citirea se face de
+la STDIN
+
+Exemplu:
+./tema0 256 hash1.in hash2.in
+./tema0 100 < hash1.in
+hash1.in:
+add tema
+add hash
+print hash.out
+find tema hash.out
+remove tema
+find tema hash.out
+print hash.out
+resize double
+print
+print_bucket 185 hash2.out
+
+Hashtable-ul implementat va conţine SIZE bucketuri. Fiecare bucket va conţine cuvintele în ordinea în care ele au fost
+introduse.
+Pentru operaţia de resize bucketurile vor fi parcurse în ordine şi redistribuite. Cuvintele din bucket vor fi parcurse
+începând cu cel mai vechi şi terminand cu cel mai recent.
+
+Precizări generale
+Valorile introduse în hashtable sunt cuvinte [A-Za-z].
+Un tablou nu poate conţine duplicate.
+Nu există limitări pentru lungimea unui bucket sau a unui cuvânt.
+Inserarea într-un tablou (bucket) se face la finalul acestuia.
+Funcţia de hash ce trebuie folosită (în întreaga temă) este definită in hash.c. Nu poate fi folosita altă funcţie
+Programul trebuie să execute comenzile în ordine, aşa cum au fost primite citite din fişier(e).
+În fişiere se va scrie în modul append
+Dacă dimensiunea hash-ului este impară (2k+1), după înjumătaţire dimensiunea lui va fi k
+Lungimea hash-ului si a unui cuvant vor fi reprezentate numar pe 32 de biti (cu semn)
+Şirul vid nu este valid
+Dimensiunea hash-ului va fi întotdeauna pozitivă
+Executabilul generat va purta numele tema0
+Comportamentul dorit la resize este unul echivalent cu urmatorul: se creeaza un nou hash, se itereaza prin bucketurile
+din vechiul hash si se adauga in noul hash
+
+Precizări VMChecker
+Arhiva temei va fi încărcată de doua ori pe vmchecker (linux si windows). Arhiva trimisă trebuie să fie aceeaşi pe ambele
+platforme (se vor compara cele doua trimise).
+Arhivele trebuie să conţina sursele temei, README şi două fişiere makefile care conţin target-urile build şi clean:
+
+makefile-ul de linux se va numi GNUmakefile
+makefile-ul de windows se va numi Makefile
+
+Executabilul rezultat din operaţia de compilare se va numi tema0
